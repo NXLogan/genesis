@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-surface: #0f1118;
+  --color-card: #171a23;
+  --color-card-hover: #1d2130;
+  --color-border: #262b3d;
+  --color-accent: #5865f2;
+  --color-accent-hover: #4752c4;
+}
+
+body {
+  @apply bg-surface text-slate-200 antialiased;
+}
