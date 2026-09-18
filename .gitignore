@@ -3,8 +3,11 @@ node_modules/
 data/
 *.db
 *.db-journal
-lavalink/Lavalink.jar
-lavalink/logs/
-panel/dist/
-panel/node_modules/
+discord-bot/node_modules/
+discord-bot/data/
+discord-bot/.env
+discord-bot/lavalink/Lavalink.jar
+discord-bot/lavalink/logs/
+website/dist/
+website/node_modules/
 .DS_Store

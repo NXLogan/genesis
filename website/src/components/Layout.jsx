@@ -11,11 +11,6 @@ const NAV = [
 ];
 
 export default function Layout({ user, children }) {
-  const logout = async () => {
-    await fetch('/auth/logout', { method: 'POST' });
-    window.location.reload();
-  };
-
   return (
     <div className="flex min-h-screen">
       <aside className="fixed inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-card">
@@ -49,20 +44,14 @@ export default function Layout({ user, children }) {
 
         <div className="border-t border-border p-4">
           <div className="flex items-center gap-3">
-            {user.avatar ? (
-              <img src={user.avatar} alt="" className="h-9 w-9 rounded-full" />
-            ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-bold">
-                {user.username[0].toUpperCase()}
-              </div>
-            )}
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-sm font-bold">
+              {(user?.username || 'A')[0].toUpperCase()}
+            </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-white">
-                {user.globalName || user.username}
+                {user?.globalName || user?.username || 'Admin local'}
               </div>
-              <button onClick={logout} className="text-xs text-slate-400 hover:text-red-400">
-                Se déconnecter
-              </button>
+              <div className="text-xs text-slate-500">Accès libre</div>
             </div>
           </div>
         </div>

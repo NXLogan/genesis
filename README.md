@@ -1,8 +1,17 @@
-# 🎮 Bot Discord GTA6 + Panel Web
+# 🎮 Projet GTA6
 
-Bot Discord complet pour le projet GTA6, avec panel web d'administration.
+Monorepo : site web (panel), bot Discord, et emplacements pour le code in-game.
 
-## Fonctionnalités
+## Structure
+
+```
+website/          # Front React (Vite + Tailwind) — panel d'admin
+discord-bot/      # Bot Discord + API Express + Lavalink + SQLite
+in-game/          # Scripts / ressources liés au jeu
+other/            # Divers (docs annexes, assets, outils)
+```
+
+## Fonctionnalités (bot + panel)
 
 | Fonctionnalité | Description |
 |---|---|
@@ -32,25 +41,24 @@ Bot Discord complet pour le projet GTA6, avec panel web d'administration.
 ## 2. Installer et lancer
 
 ```bash
-# 1. Dépendances
-npm install
-cd panel && npm install && cd ..
+# 1. Dépendances (bot + site)
+npm run install:all
 
 # 2. Configuration
-cp .env.example .env
+cp discord-bot/.env.example discord-bot/.env
 # → remplis DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, GUILD_ID
 
 # 3. Déployer les commandes slash sur ton serveur
 npm run deploy
 
-# 4. Builder le panel web
+# 4. Builder le site web
 npm run panel:build
 
-# 5. Lancer le bot + panel
+# 5. Lancer le bot + API (sert aussi le site buildé)
 npm start
 ```
 
-Le panel est sur **http://localhost:3000** (connexion Discord, réservé aux admins du serveur).
+Le panel est sur **http://localhost:3000**.
 
 ## 3. Musique (optionnel)
 
@@ -81,26 +89,26 @@ Une fois le bot lancé, sur le panel web (**Configuration**) ou avec `/config` s
 
 ```bash
 npm run dev          # bot + API avec rechargement auto
-npm run panel:dev    # panel Vite en mode dev (http://localhost:5173, proxy vers l'API)
+npm run panel:dev    # site Vite en mode dev (http://localhost:5173, proxy vers l'API)
 ```
 
-## Structure
+## Détail `discord-bot/`
 
 ```
-src/
-  index.js            # Point d'entrée (bot + serveur web)
-  deploy-commands.js  # Déploiement des commandes slash
-  db/                 # SQLite (config, tickets, convocations, patchnotes, sanctions)
-  bot/
-    client.js         # Client discord.js + chargeurs
-    commands/         # Commandes slash
-    events/           # Événements Discord
-    features/         # Logique métier (tickets, sécurité, musique...)
-  web/
-    server.js         # Serveur Express
-    auth.js           # OAuth2 Discord + contrôle admin
-    api.js            # API REST du panel
-panel/                # Front React (Vite + Tailwind)
-lavalink/             # Serveur de musique (config + script)
-data/                 # Base SQLite (créée automatiquement)
+discord-bot/
+  src/
+    index.js            # Point d'entrée (bot + serveur web)
+    deploy-commands.js  # Déploiement des commandes slash
+    db/                 # SQLite (config, tickets, convocations, patchnotes, sanctions)
+    bot/
+      client.js         # Client discord.js + chargeurs
+      commands/         # Commandes slash
+      events/           # Événements Discord
+      features/         # Logique métier (tickets, sécurité, musique...)
+    web/
+      server.js         # Serveur Express
+      auth.js           # OAuth2 Discord + contrôle admin
+      api.js            # API REST du panel
+  lavalink/             # Serveur de musique (config + script)
+  data/                 # Base SQLite (créée automatiquement)
 ```

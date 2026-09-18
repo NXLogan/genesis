@@ -17,35 +17,49 @@ import { musicAvailable } from '../bot/features/music.js';
 export function createApiRouter(client) {
   const router = Router();
 
-  const getGuild = () => client.guilds.cache.get(process.env.GUILD_ID);
+  const getGuild = () => {
+    if (!client?.guilds || !process.env.GUILD_ID) return null;
+    return client.guilds.cache.get(process.env.GUILD_ID) ?? null;
+  };
 
-  // --- Stats (dashboard) ---
-  router.get('/stats', async (req, res) => {
+  router.get('/me', (_req, res) => {
+    res.json({ id: 'local', username: 'Admin', globalName: 'Admin local', avatar: null });
+  });
+
+  router.get('/stats', async (_req, res) => {
     const guild = getGuild();
-    if (!guild) return res.status(500).json({ error: 'Serveur introuvable' });
-
     res.json({
-      guild: {
-        name: guild.name,
-        icon: guild.iconURL({ size: 128 }),
-        memberCount: guild.memberCount,
-        boosts: guild.premiumSubscriptionCount,
-        channels: guild.channels.cache.size,
-        roles: guild.roles.cache.size,
-      },
+      guild: guild
+        ? {
+            name: guild.name,
+            icon: guild.iconURL({ size: 128 }),
+            memberCount: guild.memberCount,
+            boosts: guild.premiumSubscriptionCount,
+            channels: guild.channels.cache.size,
+            roles: guild.roles.cache.size,
+          }
+        : {
+            name: 'Bot hors ligne',
+            icon: null,
+            memberCount: 0,
+            boosts: 0,
+            channels: 0,
+            roles: 0,
+          },
       openTickets: Tickets.countOpen(),
       totalTickets: Tickets.all().length,
       openConvocations: Convocations.all().filter((c) => c.status === 'open').length,
       recentSanctions: Sanctions.countRecent(7),
       totalPatchNotes: PatchNotes.all().length,
-      musicOnline: musicAvailable(client),
+      musicOnline: client ? musicAvailable(client) : false,
     });
   });
 
-  // --- Serveur : salons et rôles (pour les selects de config) ---
-  router.get('/guild', (req, res) => {
+  router.get('/guild', (_req, res) => {
     const guild = getGuild();
-    if (!guild) return res.status(500).json({ error: 'Serveur introuvable' });
+    if (!guild) {
+      return res.json({ channels: [], categories: [], roles: [] });
+    }
 
     const channels = guild.channels.cache
       .filter((c) => c.type === ChannelType.GuildText)
@@ -63,8 +77,7 @@ export function createApiRouter(client) {
     res.json({ channels, categories, roles });
   });
 
-  // --- Configuration ---
-  router.get('/config', (req, res) => {
+  router.get('/config', (_req, res) => {
     res.json(getAllConfig());
   });
 
@@ -75,8 +88,7 @@ export function createApiRouter(client) {
     res.json({ ok: true, updated: updates.length, config: getAllConfig() });
   });
 
-  // --- Tickets ---
-  router.get('/tickets', (req, res) => {
+  router.get('/tickets', (_req, res) => {
     res.json(Tickets.all());
   });
 
@@ -86,17 +98,18 @@ export function createApiRouter(client) {
     res.json({ ...ticket, messages: Tickets.messages(ticket.id) });
   });
 
-  // --- Convocations ---
-  router.get('/convocations', (req, res) => {
+  router.get('/convocations', (_req, res) => {
     res.json(Convocations.all());
   });
 
-  // --- Patch notes ---
-  router.get('/patchnotes', (req, res) => {
+  router.get('/patchnotes', (_req, res) => {
     res.json(PatchNotes.all());
   });
 
   router.post('/patchnotes', async (req, res) => {
+    if (!client) {
+      return res.status(503).json({ error: 'Le bot Discord n\'est pas connecté.' });
+    }
     const { version, title, content } = req.body;
     if (!version || !title || !content) {
       return res.status(400).json({ error: 'version, title et content sont requis' });
@@ -105,20 +118,21 @@ export function createApiRouter(client) {
       version,
       title,
       content,
-      authorId: req.session.user.id,
-      authorTag: req.session.user.username,
+      authorId: 'local',
+      authorTag: 'Admin local',
     });
     if (!result.ok) return res.status(400).json({ error: result.error });
     res.json({ ok: true, id: result.id });
   });
 
-  // --- Sanctions ---
-  router.get('/sanctions', (req, res) => {
+  router.get('/sanctions', (_req, res) => {
     res.json(Sanctions.all());
   });
 
-  // --- Publication des panneaux depuis le panel ---
   router.post('/publish/rules', async (req, res) => {
+    if (!client) {
+      return res.status(503).json({ error: 'Le bot Discord n\'est pas connecté.' });
+    }
     const { channelId } = req.body;
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased()) return res.status(400).json({ error: 'Salon invalide' });
@@ -128,6 +142,9 @@ export function createApiRouter(client) {
   });
 
   router.post('/publish/ticket-panel', async (req, res) => {
+    if (!client) {
+      return res.status(503).json({ error: 'Le bot Discord n\'est pas connecté.' });
+    }
     const { channelId } = req.body;
     const channel = await client.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased()) return res.status(400).json({ error: 'Salon invalide' });

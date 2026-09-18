@@ -1,0 +1,14 @@
+{
+  "name": "gta6-project",
+  "private": true,
+  "description": "Projet GTA6 — website, bot Discord, in-game",
+  "scripts": {
+    "start": "npm start --prefix discord-bot",
+    "dev": "npm run dev --prefix discord-bot",
+    "deploy": "npm run deploy --prefix discord-bot",
+    "panel:dev": "npm run dev --prefix website",
+    "panel:build": "npm run build --prefix website",
+    "lavalink": "npm run lavalink --prefix discord-bot",
+    "install:all": "npm install --prefix discord-bot && npm install --prefix website"
+  }
+}

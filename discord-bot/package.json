@@ -1,15 +1,13 @@
 {
   "name": "gta6-discord-bot",
   "version": "1.0.0",
-  "description": "Bot Discord GTA6 + Panel Web",
+  "description": "Bot Discord GTA6 + API du panel web",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "deploy": "node src/deploy-commands.js",
-    "panel:dev": "npm run dev --prefix panel",
-    "panel:build": "npm run build --prefix panel",
     "lavalink": "bash lavalink/start.sh"
   },
   "engines": {

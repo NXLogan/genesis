@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { api } from './api.js';
 import Layout from './components/Layout.jsx';
-import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Configuration from './pages/Configuration.jsx';
 import Tickets from './pages/Tickets.jsx';
@@ -12,27 +10,10 @@ import PatchNotes from './pages/PatchNotes.jsx';
 import Sanctions from './pages/Sanctions.jsx';
 import Securite from './pages/Securite.jsx';
 
+const GUEST = { id: 'local', username: 'Admin', globalName: 'Admin local', avatar: null };
+
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api
-      .get('/api/me')
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) return <Login />;
+  const [user] = useState(GUEST);
 
   return (
     <Layout user={user}>
