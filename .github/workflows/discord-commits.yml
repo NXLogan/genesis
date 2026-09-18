@@ -1,0 +1,95 @@
+name: Discord commit logs
+
+on:
+  push:
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Envoyer les commits sur Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_WEBHOOK_URL }}
+          BOT_WEBHOOK_URL: ${{ secrets.GITHUB_BOT_WEBHOOK_URL }}
+          BOT_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+          EVENT_PATH: ${{ github.event_path }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ] && [ -z "$BOT_WEBHOOK_URL" ]; then
+            echo "Aucun webhook configuré (DISCORD_GITHUB_WEBHOOK_URL ou GITHUB_BOT_WEBHOOK_URL). Skip."
+            exit 0
+          fi
+
+          # --- Option A : webhook Discord natif (recommandé) ---
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            node <<'NODE'
+          const fs = require('fs');
+          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const commits = event.commits || [];
+          if (!commits.length && !event.head_commit) {
+            console.log('Aucun commit à annoncer');
+            process.exit(0);
+          }
+          const list = commits.length ? commits : [event.head_commit];
+          const repo = event.repository?.full_name || 'repo';
+          const branch = (event.ref || '').replace(/^refs\/heads\//, '');
+          const pusher = event.pusher?.name || event.sender?.login || 'inconnu';
+          const lines = list.slice(-10).map((c) => {
+            const sha = c.id.slice(0, 7);
+            const msg = (c.message.split('\n')[0] || '').slice(0, 80);
+            const author = c.author?.username || c.author?.name || 'inconnu';
+            return `[\`${sha}\`](${c.url}) ${msg} — *${author}*`;
+          });
+          const extra = list.length > 10 ? `\n_… et ${list.length - 10} autre(s) commit(s)_` : '';
+          const title =
+            list.length === 1
+              ? `Nouveau commit sur \`${repo}\``
+              : `${list.length} commits sur \`${repo}\``;
+          const embed = {
+            author: {
+              name: 'GitHub',
+              icon_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+              url: event.repository?.html_url,
+            },
+            title,
+            url: event.compare || list[list.length - 1]?.url,
+            description: lines.join('\n') + extra,
+            color: event.forced ? 0xed4245 : 0x24292f,
+            fields: [
+              { name: 'Branche', value: `\`${branch}\``, inline: true },
+              { name: 'Auteur push', value: pusher, inline: true },
+            ],
+            footer: { text: repo },
+            timestamp: new Date().toISOString(),
+          };
+          if (event.forced) {
+            embed.fields.push({
+              name: '⚠️ Force push',
+              value: "L'historique de la branche a été réécrit.",
+            });
+          }
+          fetch(process.env.DISCORD_WEBHOOK_URL + '?wait=true', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ embeds: [embed], username: 'GitHub' }),
+          }).then(async (res) => {
+            if (!res.ok) {
+              console.error(await res.text());
+              process.exit(1);
+            }
+            console.log('Discord notifié');
+          });
+          NODE
+          fi
+
+          # --- Option B : endpoint du bot (/webhooks/github) ---
+          if [ -n "$BOT_WEBHOOK_URL" ]; then
+            BODY_FILE="$EVENT_PATH"
+            CURL_HEADERS=(-H "Content-Type: application/json" -H "X-GitHub-Event: push")
+            if [ -n "$BOT_WEBHOOK_SECRET" ]; then
+              SIG="sha256=$(openssl dgst -sha256 -hmac "$BOT_WEBHOOK_SECRET" "$BODY_FILE" | awk '{print $NF}')"
+              CURL_HEADERS+=(-H "X-Hub-Signature-256: $SIG")
+            fi
+            curl -sS -X POST "$BOT_WEBHOOK_URL" "${CURL_HEADERS[@]}" --data-binary @"$BODY_FILE"
+            echo
+            echo "Bot webhook notifié"
+          fi

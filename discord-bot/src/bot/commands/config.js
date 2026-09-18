@@ -21,6 +21,14 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
+      .setName('salon-github')
+      .setDescription('Définir le salon des logs GitHub (commits)')
+      .addChannelOption((opt) =>
+        opt.setName('salon').setDescription('Salon texte').addChannelTypes(ChannelType.GuildText).setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
       .setName('salon-patchnotes')
       .setDescription('Définir le salon des patch notes')
       .addChannelOption((opt) =>
@@ -77,6 +85,7 @@ export async function execute(interaction) {
       .setTitle('⚙️ Configuration actuelle')
       .addFields(
         { name: 'Salon logs', value: channel(config.logs_channel_id), inline: true },
+        { name: 'Salon GitHub', value: channel(config.github_logs_channel_id), inline: true },
         { name: 'Salon patch notes', value: channel(config.patchnotes_channel_id), inline: true },
         { name: 'Catégorie tickets', value: channel(config.tickets_category_id), inline: true },
         { name: 'Catégorie convocations', value: channel(config.convocations_category_id), inline: true },
@@ -97,6 +106,7 @@ export async function execute(interaction) {
 
   const mapping = {
     'salon-logs': ['logs_channel_id', 'salon'],
+    'salon-github': ['github_logs_channel_id', 'salon'],
     'salon-patchnotes': ['patchnotes_channel_id', 'salon'],
     'categorie-tickets': ['tickets_category_id', 'categorie'],
     'categorie-convocations': ['convocations_category_id', 'categorie'],
@@ -111,6 +121,41 @@ export async function execute(interaction) {
       : interaction.options.getChannel(optionName);
 
   setConfig(key, value.id);
+
+  // Pour le salon GitHub : crée (ou réutilise) un webhook Discord et affiche l'URL
+  // à coller dans les secrets GitHub (DISCORD_GITHUB_WEBHOOK_URL).
+  if (sub === 'salon-github' && value.isTextBased?.()) {
+    try {
+      const hooks = await value.fetchWebhooks();
+      let hook = hooks.find((h) => h.name === 'GitHub Logs' && h.owner?.id === interaction.client.user.id);
+      if (!hook) {
+        hook = await value.createWebhook({
+          name: 'GitHub Logs',
+          avatar: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+          reason: 'Logs de commits GitHub',
+        });
+      }
+      return interaction.reply({
+        content:
+          `✅ Salon GitHub : ${value}\n\n` +
+          `Colle cette URL comme secret GitHub **\`DISCORD_GITHUB_WEBHOOK_URL\`** ` +
+          `(repo → Settings → Secrets and variables → Actions) :\n` +
+          `||${hook.url}||\n\n` +
+          `_L’Action \`.github/workflows/discord-commits.yml\` publiera chaque commit ici._`,
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (err) {
+      return interaction.reply({
+        content:
+          `✅ Salon GitHub enregistré : ${value}\n` +
+          `⚠️ Impossible de créer le webhook Discord automatiquement (${err.message}). ` +
+          `Crée-en un à la main dans le salon (Paramètres → Intégrations → Webhooks) ` +
+          `et ajoute l’URL comme secret \`DISCORD_GITHUB_WEBHOOK_URL\`.`,
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+  }
+
   await interaction.reply({
     content: `✅ Configuration mise à jour : **${sub}** → ${value}`,
     flags: MessageFlags.Ephemeral,

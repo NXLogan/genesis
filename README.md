@@ -24,6 +24,7 @@ other/            # Divers (docs annexes, assets, outils)
 | 🎵 **Musique** | Lavalink : `/play`, `/skip`, `/stop`, `/pause`, `/queue`, `/volume`, `/nowplaying` + boutons |
 | 🛡️ **Gestion** | `/ban`, `/kick`, `/mute`, `/unmute`, `/warn`, `/sanctions`, `/clear`, `/slowmode`, `/lock`, `/unlock` |
 | 🔒 **Sécurité** | Anti-spam, anti-raid, anti-invitations, anti-nuke, logs complets |
+| 📦 **Logs GitHub** | Embed Discord à chaque push (Action + salon configurable) |
 
 ## 1. Créer le bot sur Discord
 
@@ -84,6 +85,30 @@ Une fois le bot lancé, sur le panel web (**Configuration**) ou avec `/config` s
 4. Publie le **panneau de tickets** (`/ticket panneau` ou depuis le panel).
 
 > 💡 Pour verrouiller le serveur aux non-membres : retire la permission « Voir les salons » de `@everyone` sur tes salons, et donne-la au rôle membre.
+
+## Logs GitHub → Discord
+
+À chaque push, les commits sont annoncés dans un salon Discord.
+
+### Setup rapide (recommandé)
+
+1. Sur Discord : `/config salon-github #ton-salon`  
+   → le bot crée un webhook et t’affiche l’URL (éphémère).
+2. Sur GitHub (repo → **Settings → Secrets and variables → Actions**) :  
+   crée le secret **`DISCORD_GITHUB_WEBHOOK_URL`** avec cette URL.
+3. Push un commit : l’Action `.github/workflows/discord-commits.yml` poste l’embed.
+
+### Alternative : webhook vers le bot
+
+Si ton panel est public (`PANEL_URL`) :
+
+1. Configure le salon (`/config salon-github` ou panel → **Salon logs GitHub**).
+2. Dans `discord-bot/.env` : `GITHUB_WEBHOOK_SECRET=<openssl rand -hex 32>`.
+3. GitHub → **Settings → Webhooks → Add webhook** :
+   - Payload URL : `https://ton-domaine/webhooks/github`
+   - Content type : `application/json`
+   - Secret : la même valeur que `GITHUB_WEBHOOK_SECRET`
+   - Events : **Just the push event**
 
 ## Développement
 

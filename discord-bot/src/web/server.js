@@ -3,12 +3,20 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApiRouter } from './api.js';
+import { createGithubWebhookRouter } from './github.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function startWebServer(client = null) {
   const app = express();
   const port = process.env.PORT || 3000;
+
+  // Corps brut requis pour vérifier la signature HMAC GitHub
+  app.use(
+    '/webhooks/github',
+    express.raw({ type: 'application/json' }),
+    createGithubWebhookRouter(client)
+  );
 
   app.use(express.json());
 

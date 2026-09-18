@@ -105,6 +105,8 @@ export const DEFAULT_CONFIG = {
   convocations_category_id: null,
   // Logs
   logs_channel_id: null,
+  // Logs GitHub (commits)
+  github_logs_channel_id: null,
   // Sécurité
   antispam_enabled: true,
   antispam_max_messages: 6,

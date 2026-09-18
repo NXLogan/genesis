@@ -146,6 +146,15 @@ export default function Configuration() {
               {channelOptions}
             </select>
           </Field>
+          <Field label="Salon logs GitHub">
+            <select
+              className={selectCls}
+              value={config.github_logs_channel_id || ''}
+              onChange={(e) => set('github_logs_channel_id', e.target.value || null)}
+            >
+              {channelOptions}
+            </select>
+          </Field>
           <Field label="Catégorie tickets">
             <select
               className={selectCls}
