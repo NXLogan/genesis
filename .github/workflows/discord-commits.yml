@@ -12,18 +12,23 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_WEBHOOK_URL }}
           BOT_WEBHOOK_URL: ${{ secrets.GITHUB_BOT_WEBHOOK_URL }}
           BOT_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
-          EVENT_PATH: ${{ github.event_path }}
         run: |
           if [ -z "$DISCORD_WEBHOOK_URL" ] && [ -z "$BOT_WEBHOOK_URL" ]; then
             echo "Aucun webhook configuré (DISCORD_GITHUB_WEBHOOK_URL ou GITHUB_BOT_WEBHOOK_URL). Skip."
             exit 0
           fi
 
+          # GITHUB_EVENT_PATH est fourni automatiquement par Actions
+          if [ ! -f "$GITHUB_EVENT_PATH" ]; then
+            echo "GITHUB_EVENT_PATH introuvable"
+            exit 1
+          fi
+
           # --- Option A : webhook Discord natif (recommandé) ---
           if [ -n "$DISCORD_WEBHOOK_URL" ]; then
             node <<'NODE'
           const fs = require('fs');
-          const event = JSON.parse(fs.readFileSync(process.env.EVENT_PATH, 'utf8'));
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
           const commits = event.commits || [];
           if (!commits.length && !event.head_commit) {
             console.log('Aucun commit à annoncer');
@@ -77,19 +82,21 @@ jobs:
               process.exit(1);
             }
             console.log('Discord notifié');
+          }).catch((err) => {
+            console.error(err);
+            process.exit(1);
           });
           NODE
           fi
 
           # --- Option B : endpoint du bot (/webhooks/github) ---
           if [ -n "$BOT_WEBHOOK_URL" ]; then
-            BODY_FILE="$EVENT_PATH"
             CURL_HEADERS=(-H "Content-Type: application/json" -H "X-GitHub-Event: push")
             if [ -n "$BOT_WEBHOOK_SECRET" ]; then
-              SIG="sha256=$(openssl dgst -sha256 -hmac "$BOT_WEBHOOK_SECRET" "$BODY_FILE" | awk '{print $NF}')"
+              SIG="sha256=$(openssl dgst -sha256 -hmac "$BOT_WEBHOOK_SECRET" "$GITHUB_EVENT_PATH" | awk '{print $NF}')"
               CURL_HEADERS+=(-H "X-Hub-Signature-256: $SIG")
             fi
-            curl -sS -X POST "$BOT_WEBHOOK_URL" "${CURL_HEADERS[@]}" --data-binary @"$BODY_FILE"
+            curl -sS -X POST "$BOT_WEBHOOK_URL" "${CURL_HEADERS[@]}" --data-binary @"$GITHUB_EVENT_PATH"
             echo
             echo "Bot webhook notifié"
           fi
