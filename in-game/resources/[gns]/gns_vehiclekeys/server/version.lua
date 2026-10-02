@@ -1,0 +1,1 @@
+assert(lib.checkDependency('gns_core', '1.20.0'), 'gns_core v1.20.0 or higher is required')

@@ -1,0 +1,19 @@
+# gns_density
+Population management for genesis.
+
+## Features
+- Calm AI (adjusting npc/gang npc aggresiveness)
+- Adjusting npc/vehicle/parked vehicle spawn rates
+- Small collection of ymaps to disable car generators
+
+## Installation
+### Manual
+- Download the script and put it in the `[gns]` directory.
+- Add the following code to your server.cfg/resouces.cfg
+```
+ensure gns_density
+```
+
+## Configuration
+- Adjust variables in `config/client.lua` for permanent changes
+- Utilize `exports.gns_density:SetDensity(type, value)` to adjust at runtime

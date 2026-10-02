@@ -10,4 +10,6 @@ discord-bot/lavalink/Lavalink.jar
 discord-bot/lavalink/logs/
 website/dist/
 website/node_modules/
+panel/dist/
+panel/node_modules/
 .DS_Store

@@ -24,7 +24,7 @@ export function startWebServer(client = null) {
   app.use('/api', createApiRouter(client));
 
   // Panel buildé (production)
-  const distDir = join(__dirname, '../../../website/dist');
+  const distDir = join(__dirname, '../../../panel/dist');
   if (existsSync(distDir)) {
     app.use(express.static(distDir));
     app.use((req, res, next) => {
@@ -36,7 +36,7 @@ export function startWebServer(client = null) {
   } else {
     app.get('/', (req, res) => {
       res.send(
-        '<h1>Panel non buildé</h1><p>Lance <code>npm run panel:build</code> à la racine pour construire le site.</p>'
+        '<h1>Panel non buildé</h1><p>Lance <code>npm run panel:build</code> à la racine pour construire le panel.</p>'
       );
     });
   }

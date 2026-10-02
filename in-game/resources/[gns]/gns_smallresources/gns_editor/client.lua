@@ -1,0 +1,25 @@
+RegisterCommand('record', function()
+    StartRecording(1)
+    exports.gns_core:Notify(locale('success.started_recording'), 'success')
+end, false)
+
+RegisterCommand('clip', function()
+    StartRecording(0)
+    exports.gns_core:Notify(locale('success.stopped_recording'), 'success')
+end, false)
+
+RegisterCommand('saveclip', function()
+    StopRecordingAndSaveClip()
+    exports.gns_core:Notify(locale('success.saved_recording'), 'success')
+end, false)
+
+RegisterCommand('delclip', function()
+    StopRecordingAndDiscardClip()
+    exports.gns_core:Notify(locale('error.deleted_recording'), 'error')
+end, false)
+
+RegisterCommand('editor', function()
+    NetworkSessionLeaveSinglePlayer()
+    ActivateRockstarEditor()
+    exports.gns_core:Notify(locale('error.later_aligator'), 'error')
+end, false)

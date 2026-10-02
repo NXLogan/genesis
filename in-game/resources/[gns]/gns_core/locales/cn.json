@@ -1,0 +1,174 @@
+{
+    "error": {
+        "not_online": "玩家不在线",
+        "wrong_format": "格式错误",
+        "missing_args": "请输入必须参数 (x, y, z)",
+        "missing_args2": "请输入所有参数!",
+        "no_access": "你没有权限",
+        "company_too_poor": "你所在的公司账户目前发不起工资",
+        "item_not_exist": "该物品不存在",
+        "too_heavy": "背包已满",
+        "duplicate_license": "发现重复的 Rockstar 许可证",
+        "no_valid_license":  "未找到有效的 Rockstar 许可证",
+        "not_whitelisted": "你没有被列入此服务器的白名单",
+        "server_already_open": "服务器已经开启",
+        "server_already_closed": "服务器已经关闭",
+        "no_permission": "权限不足..",
+        "no_waypoint": "未设置导航点。",
+        "tp_error": "传送时出现错误。",
+        "connecting_database_timeout": "数据库连接超时。(检查是否已开启SQL服务器？)",
+        "connecting_error": "连接服务器时发生错误。(检查服务器控制台)",
+        "no_match_character_registration": "不允许使用字母外的任何内容，不允许尾部空格字符且单词必须以大写字母开头。你可以添加中间有空格字符的单词。",
+        "already_in_queue": "你已加入队列。",
+        "no_subqueue": "不允许加入任何子队列。"
+    },
+    "success": {
+        "server_opened": "服务器已开启",
+        "server_closed": "服务器已关闭",
+        "teleported_waypoint": "已传送至导航点。",
+        "character_deleted": "角色已删除！",
+        "character_deleted_citizenid": "已成功删除ID为 %s 的角色。"
+    },
+    "info": {
+        "received_paycheck": "你收到了你的工资 $%s",
+        "job_info": "工作: %s | 级别: %s | 工作状态状态: %s",
+        "gang_info": "帮派: %s | 级别: %s",
+        "on_duty": "你开始上班了!",
+        "off_duty": "你现在下班了!",
+        "checking_ban": "您好 %s。我们正在检查您是否被服务器封禁。",
+        "join_server": "欢迎 %s 进入 %s.",
+        "checking_whitelisted": "您好 %s。我们正在检查您是否在白名单内。",
+        "exploit_banned": "您因作弊被封禁。请查看我们的Discord以了解更多信息：%s",
+        "exploit_dropped": "您因利用漏洞被移出服务器。",
+        "multichar_title": "Genesis 多角色系统",
+        "multichar_new_character": "新角色 #%s",
+        "char_male": "男",
+        "char_female": "女",
+        "play": "开始",
+        "play_description": "扮演 %s",
+        "delete_character": "删除角色",
+        "delete_character_description": "删除 %s",
+        "logout_command_help": "退出当前角色",
+        "check_id": "查看服务器 ID",
+        "deletechar_command_help": "删除玩家角色",
+        "deletechar_command_arg_player_id": "玩家 ID",
+        "character_registration_title": "角色注册",
+        "first_name": "名字",
+        "last_name": "姓氏",
+        "nationality": "国籍",
+        "gender": "性别",
+        "birth_date": "出生日期",
+        "select_gender": "选择性别...",
+        "confirm_delete": "你确认要删除这个角色吗？",
+        "in_queue": "🐌 位于队列 %s/%s 。 (%s) %s"
+    },
+    "command": {
+        "tp": {
+            "help": "传送至玩家或坐标 (仅限管理员)",
+            "params": {
+                "x": { "name": "id/x", "help": "玩家服务器ID或X轴坐标"},
+                "y": { "name": "y", "help": "Y轴坐标"},
+                "z": { "name": "z", "help": "Z轴坐标"}
+            }
+        },
+        "tpm": { "help": "传送到标记点 (仅限管理员)" },
+        "togglepvp": { "help": "切换服务器PVP模式 (仅限管理员)" },
+        "addpermission": {
+            "help": "给予玩家权限 (仅限超级管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "permission": { "name": "permission", "help": "权限等级" }
+            }
+        },
+        "removepermission": {
+            "help": "移除玩家权限 (仅限超级管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "permission": { "name": "permission", "help": "权限等级" }
+            }
+        },
+        "openserver": { "help": "开放服务器给所有人 (仅限管理员)" },
+        "closeserver": {
+            "help": "关闭服务器 (仅限管理员)",
+            "params": {
+                "reason": { "name": "reason", "help": "关闭原因 (可选)" }
+            }
+        },
+        "car": {
+            "help": "生成车辆 (仅限管理员)",
+            "params": {
+                "model": { "name": "model", "help": "车辆型号名称" },
+                "keepCurrentVehicle": { "name": "keepCurrentVehicle", "help": "保留当前车辆 (留空则删除当前车辆)" }
+            }
+        },
+        "dv": {
+            "help": "删除车辆 (仅限管理员)",
+            "params": {
+                "radius": { "name": "radius", "help": "删除半径内的车辆 (米)" }
+            }
+        },
+        "givemoney": {
+            "help": "给予玩家金钱 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "moneytype": { "name": "moneytype", "help": "金钱类型 (现金、银行、加密货币)" },
+                "amount": { "name": "amount", "help": "金额" }
+            }
+        },
+        "setmoney": {
+            "help": "设置玩家金钱数额 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "moneytype": { "name": "moneytype", "help": "金钱类型 (现金、银行、加密货币)" },
+                "amount": { "name": "amount", "help": "金额" }
+            }
+        },
+        "job": { "help": "查看你的职业" },
+        "setjob": {
+            "help": "设置玩家职业 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "job": { "name": "job", "help": "职业名称" },
+                "grade": { "name": "grade", "help": "职业等级" }
+            }
+        },
+        "changejob": {
+            "help": "更改玩家的当前职业 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "job": { "name": "job", "help": "职业名称" }
+            }
+        },
+        "addjob": {
+            "help": "为玩家添加职业 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "job": { "name": "job", "help": "职业名称" },
+                "grade": { "name": "grade", "help": "职业等级" }
+            }
+        },
+        "removejob": {
+            "help": "移除玩家职业 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "job": { "name": "job", "help": "职业名称" }
+            }
+        },
+        "gang": { "help": "查看你的帮派" },
+        "setgang": {
+            "help": "设置玩家帮派 (仅限管理员)",
+            "params": {
+                "id": { "name": "id", "help": "玩家ID" },
+                "gang": { "name": "gang", "help": "帮派名称" },
+                "grade": { "name": "grade", "help": "帮派等级" }
+            }
+        },
+        "ooc": { "help": "OOC聊天消息" },
+        "me": {
+            "help": "显示本地消息",
+            "params": {
+                "message": { "name": "message", "help": "要发送的消息" }
+            }
+        }
+    }
+}

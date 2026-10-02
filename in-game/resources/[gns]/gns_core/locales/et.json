@@ -1,0 +1,169 @@
+{
+    "error": {
+        "not_online": "Mängija pole serveris",
+        "wrong_format": "Vale vorming",
+        "missing_args": "Kõiki argumente pole sisestatud (x, y, z)",
+        "missing_args2": "Kõik argumendid tuleb täita!",
+        "no_access": "Sellele käsule pole juurdepääsu",
+        "company_too_poor": "Teie tööandja on võlgades",
+        "item_not_exist": "Asi ei eksisteeri",
+        "too_heavy": "Inventuur on liiga täis",
+        "location_not_exist": "Asukoht ei eksisteeri",
+        "duplicate_license": "Leiti Rockstari litsentsi duplikaat",
+        "no_valid_license":  "Kehtivat Rockstari litsentsi ei leitud",
+        "not_whitelisted": "Te ei ole selle serveri jaoks Allowlisted",
+        "server_already_open": "Server on juba avatud",
+        "server_already_closed": "Server on juba suletud",
+        "no_permission": "Teil pole selleks õigusi..",
+        "no_waypoint": "Ühtegi punkti ei ole märgitud.",
+        "tp_error": "Teleportimise viga.",
+        "connecting_database_timeout": "Connection to database timed out. (Is the SQL server on?)",
+        "connecting_error": "An error occurred while connecting to the server. (Check your server console)",
+        "no_match_character_registration": "Anything other than letters aren't allowed, trailing whitespaces aren't allowed either and words must start with a capital letter in input fields. You can however add words with spaces inbetween.",
+        "already_in_queue": "You are already in queue.",
+        "no_subqueue": "You were not let in any sub-queue."
+    },
+    "success": {
+        "server_opened": "Server on avatud",
+        "server_closed": "Server on suletud",
+        "teleported_waypoint": "Teleporteerusid punktile.",
+        "character_deleted": "Character deleted!",
+        "character_deleted_citizenid": "You successfully deleted the character with Citizen ID %s."
+    },
+    "info": {
+        "received_paycheck": "Saite oma palga $%s",
+        "job_info": "Töö: %s | Auaste: %s | Tööpostil: %s",
+        "gang_info": "Gang: %s | Auaste: %s",
+        "on_duty": "Sa oled tööle kirjutatud!",
+        "off_duty": "Sa kirjutasid ennast töölt vabaks!",
+        "checking_ban": "Tere %s. Me kontrollime, kas olete keelustatud.",
+        "join_server": "Tere tulemast %s serverisse %s.",
+        "checking_whitelisted": "Tere %s. Kontrollime teie Allowlisti staatust.",
+        "exploit_banned": "Olete saanud petmise eest mängukeelu. Lisateabe saamiseks vaadake meie Discordi: %s",
+        "exploit_dropped": "Sind visati serverist välja petmise tõttu.",
+        "multichar_title": "Genesis Multichar",
+        "multichar_new_character": "New Character #%s",
+        "char_male": "Male",
+        "char_female": "Female",
+        "play": "Play",
+        "play_description": "Play as %s",
+        "delete_character": "Delete Character",
+        "delete_character_description": "Delete %s",
+        "logout_command_help": "Logs you out of your current character",
+        "check_id": "Check your Server ID",
+        "deletechar_command_help": "Delete a players character",
+        "deletechar_command_arg_player_id": "Player ID",
+        "character_registration_title": "Character Registration",
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "nationality": "Nationality",
+        "gender": "Sex",
+        "birth_date": "Birth Date",
+        "select_gender": "Select your gender...",
+        "confirm_delete": "Are you sure you wish to delete this character?",
+        "in_queue": "🐌 You are %s/%s in queue. (%s) %s"
+    },
+    "command": {
+        "tp": {
+            "help": "TP mängijale või koordinaatidele (ainult administraator)",
+            "params": {
+                "x": { "name": "id/x", "help": "ID mängija või X positsioon"},
+                "y": { "name": "y", "help": "Y positsioon"},
+                "z": { "name": "z", "help": "Z positsioon"}
+            }
+        },
+        "tpm": { "help": "TP Markerile (ainult administraator)" },
+        "togglepvp": { "help": "PVP serveris sisse- ja väljalülitamine (ainult administraator)" },
+        "addpermission": {
+            "help": "Andke mängijale õigused (ainult jumal)",
+            "params": {
+                "id": { "name": "id", "help": "mängija ID" },
+                "permission": { "name": "permission", "help": "Permission level" }
+            }
+        },
+        "removepermission": {
+            "help": "Eemaldage mängija õigused (ainult jumal)",
+            "params": {
+                "id": { "name": "id", "help": "mängija ID" },
+                "permission": { "name": "õigused", "help": "Õiguse tase" }
+            }
+        },
+        "openserver": { "help": "Ava server kõigile (ainult administraator)" },
+        "closeserver": {
+            "help": "Sulgege server ilma õigusteta inimeste jaoks (ainult administraator)",
+            "params": {
+                "reason": { "name": "põhjus", "help": "Sulgemise põhjus (valikuline)" }
+            }
+        },
+        "car": {
+            "help": "Sõiduki loomine (ainult administraator)",
+            "params": {
+                "model": { "name": "mudel", "help": "Sõiduki mudeli nimi" }
+            }
+        },
+        "dv": { "help": "Sõiduki kustutamine (ainult administraator)" },
+        "givemoney": {
+            "help": "Mängija rahasumma määramine (ainult administraator)",
+            "params": {
+                "id": { "name": "id", "help": "Mängija ID" },
+                "moneytype": { "name": "rahatüüp", "help": "Raha liik (sularaha, pank, krüpto)" },
+                "amount": { "name": "kogus", "help": "Rahasumma" }
+            }
+        },
+        "setmoney": {
+            "help": "Mängija rahasumma määramine (ainult administraator)",
+            "params": {
+                "id": { "name": "id", "help": "Mängija ID" },
+                "moneytype": { "name": "rahatüüp", "help": "Raha liik (sularaha, pank, krüpto)" },
+                "amount": { "name": "kogus", "help": "Rahasumma" }
+            }
+        },
+        "job": { "help": "Kontrollige oma töödkohta" },
+        "setjob": {
+            "help": "Mängijale töökoha määramine (ainult administraator)",
+            "params": {
+                "id": { "name": "id", "help": "Mängija ID" },
+                "job": { "name": "töö", "help": "Töökoha nimi" },
+                "grade": { "name": "tase", "help": "Tüükoha tase" }
+            }
+        },
+        "changejob": {
+            "help": "Change Active Job of Player (Admin Only)",
+            "params": {
+                "id": { "name": "id", "help": "Player ID" },
+                "job": { "name": "job", "help": "Job name" }
+            }
+        },
+        "addjob": {
+            "help": "Add Job to Player (Admin Only)",
+            "params": {
+                "id": { "name": "id", "help": "Player ID" },
+                "job": { "name": "job", "help": "Job name" },
+                "grade": { "name": "grade", "help": "Job grade" }
+            }
+        },
+        "removejob": {
+            "help": "Remove Job from Player (Admin Only)",
+            "params": {
+                "id": { "name": "id", "help": "Player ID" },
+                "job": { "name": "job", "help": "Job name" }
+            }
+        },
+        "gang": { "help": "Kontrollige oma grupeeringut" },
+        "setgang": {
+            "help": "Määra mängija grupeeringu (ainult administraator)",
+            "params": {
+                "id": { "name": "id", "help": "Player ID" },
+                "gang": { "name": "jõuk", "help": "Grupeeringu nimi" },
+                "grade": { "name": "tase", "help": "Grupeeringu tase" }
+            }
+        },
+        "ooc": { "help": "OOC vestlussõnum" },
+        "me": {
+            "help": "Kuva kohalikud sõnumid",
+            "params": {
+                "message": { "name": "sõnum", "help": "Sõnum saatmiseks" }
+            }
+        }
+    }
+}

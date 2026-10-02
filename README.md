@@ -5,7 +5,8 @@ Monorepo : site web (panel), bot Discord, et emplacements pour le code in-game.
 ## Structure
 
 ```
-website/          # Front React (Vite + Tailwind) — panel d'admin
+website/          # Site public Genesis (Accueil, Lore, Boutique…)
+panel/            # Panel d'admin Discord (React + Vite)
 discord-bot/      # Bot Discord + API Express + Lavalink + SQLite
 in-game/          # Scripts / ressources liés au jeu
 other/            # Divers (docs annexes, assets, outils)
@@ -52,14 +53,15 @@ cp discord-bot/.env.example discord-bot/.env
 # 3. Déployer les commandes slash sur ton serveur
 npm run deploy
 
-# 4. Builder le site web
+# 4. Builder le panel admin
 npm run panel:build
 
-# 5. Lancer le bot + API (sert aussi le site buildé)
+# 5. Lancer le bot + API (sert aussi le panel buildé)
 npm start
 ```
 
-Le panel est sur **http://localhost:3000**.
+Le **site public Genesis** (dev) : `npm run website:dev` → **http://localhost:5173**  
+Le **panel** : **http://localhost:3000** (via le bot) ou `npm run panel:dev`.
 
 ## 3. Musique (optionnel)
 
@@ -113,8 +115,9 @@ Si ton panel est public (`PANEL_URL`) :
 ## Développement
 
 ```bash
-npm run dev          # bot + API avec rechargement auto
-npm run panel:dev    # site Vite en mode dev (http://localhost:5173, proxy vers l'API)
+npm run dev            # bot + API avec rechargement auto
+npm run website:dev    # site Genesis (http://localhost:5173)
+npm run panel:dev      # panel admin Vite
 ```
 
 ## Détail `discord-bot/`

@@ -1,5 +1,15 @@
-# In-game
+# In-game — Genesis
 
-Scripts et ressources liés au jeu (FiveM / GTA, etc.).
+Framework roleplay FiveM, préfixe `gns`.
 
-Ce dossier est prêt pour accueillir le code in-game.
+La doc est dans [docs/README.md](docs/README.md) : démarrage, architecture, sécurité, ajout d’une ressource.
+
+```
+resources/[gns]/gns_core     # joueurs, argent, jobs
+resources/[gns]/gns_*        # jobs et activités
+resources/[ox]               # inventaire, target, mysql
+server.cfg                   # convars gns:*
+genesis.sql
+```
+
+Base Qbox (GPL-3.0). Les `LICENSE` d’origine restent dans chaque ressource.
