@@ -12,7 +12,13 @@ Le client FiveM n’est pas un environnement fiable. Tout ce qui change l’arge
 
 **`QBCore:CallCommand`.** Le nom de commande doit être un identifiant (`[%w_%-]+`). Les arguments ne peuvent pas contenir de retour à la ligne ni de `;`. L’ace `command.<nom>` est toujours exigée. Au-delà de 6 appels en 5 secondes, l’appel est ignoré.
 
-**Véhicule persistant.** Le spawn réseau est limité, et les coordonnées doivent encore correspondre au cache serveur. Un client ne choisit pas un point arbitraire.
+**Véhicule persistant.** Le spawn réseau est limité, et les coordonnées doivent encore correspondre au cache serveur. Un client ne choisit pas un point arbitraire. L’essence et l’huile enregistrées ne peuvent pas augmenter via l’event réseau, et le joueur doit être à côté du véhicule.
+
+**Police.** Se menotter ou se démenotter n’est accepté que dans les 20 secondes qui suivent un menottage lancé par un joueur proche ayant des menottes. Une amende est un entier entre 1 et 100 000, par un policier en service. La prison est entre 1 et 999. La saisie d’argent liquide exige un policier en service et une cible menottée, morte ou à terre. Voler l’argent d’un joueur exige la même incapacité, pas seulement d’être à côté.
+
+**Mécano.** Les mods, pièces et kilométrage ne s’écrivent que pour le véhicule dans lequel le joueur se trouve (ou à côté, pour un mécano). Une pièce ne peut pas remonter sans être mécano en service. Le kilométrage ne peut gagner que 2 km par envoi, et n’est écrit en base qu’une fois toutes les 15 secondes. La distance n’est plus comptée deux fois.
+
+**Stress.** Un event client ne peut ajouter que 8 points (au plus une fois toutes les 800 ms) ou en retirer 24 (au plus une fois toutes les 1,5 s). Un revive remet le stress à 0 côté serveur.
 
 **Déconnexion.** La sauvegarde est dans un `pcall`. Si MySQL échoue, le joueur est quand même retiré de `GNS.Players`, au lieu de rester fantôme en mémoire.
 

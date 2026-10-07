@@ -2,12 +2,27 @@
 local config = require 'config.server'
 local sharedConfig = require 'config.shared'
 local resetStress = false
+local stressCooldown = {}
 
+---@param src number
 ---@param amount any
----@return boolean
-local function isValidStressAmount(amount)
-    return type(amount) == 'number' and amount == amount and amount > 0 and amount <= 100
+---@param cap number
+---@param windowMs number
+---@return number?
+local function takeStressAmount(src, amount, cap, windowMs)
+    amount = tonumber(amount)
+    if not amount or amount ~= amount or amount <= 0 then return end
+    if amount > cap then amount = cap end
+    local now = GetGameTimer()
+    local last = stressCooldown[src]
+    if last and (now - last) < windowMs then return end
+    stressCooldown[src] = now
+    return amount
 end
+
+AddEventHandler('playerDropped', function()
+    stressCooldown[source] = nil
+end)
 
 -- Handlers
 
@@ -29,9 +44,9 @@ end)
 
 RegisterNetEvent('hud:server:GainStress', function(amount)
     if not sharedConfig.stress.enableStress then return end
-    if not isValidStressAmount(amount) then return end
-
     local src = source
+    amount = takeStressAmount(src, amount, 8, 800)
+    if not amount then return end
     local player = exports.gns_core:GetPlayer(src)
     local newStress
     if not player or (config.stress.disableForLEO and player.PlayerData.job.type == 'leo') then return end
@@ -54,9 +69,9 @@ end)
 
 RegisterNetEvent('hud:server:RelieveStress', function(amount)
     if not sharedConfig.stress.enableStress then return end
-    if not isValidStressAmount(amount) then return end
-
     local src = source
+    amount = takeStressAmount(src, amount, 24, 1500)
+    if not amount then return end
     local player = exports.gns_core:GetPlayer(src)
     local newStress
     if not player then return end

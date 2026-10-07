@@ -15,9 +15,65 @@ exports.ox_inventory:RegisterStash(stash.id, stash.label, stash.slots, stash.wei
 
 -- Functions
 
+local partLimits = {
+    engine = 1000,
+    body = 1000,
+    radiator = 100,
+    axle = 100,
+    brakes = 100,
+    clutch = 100,
+    fuel = 100,
+}
+
+local distanceWrite = {}
+
 local function isVehicleOwned(plate)
     local count = MySQL.scalar.await('SELECT count(*) from player_vehicles WHERE plate = ?', {plate})
     return count > 0
+end
+
+local function isMechanic(src)
+    local player = exports.gns_core:GetPlayer(src)
+    local job = player and player.PlayerData.job
+    return job and job.name == 'mechanic' and job.onduty
+end
+
+local function canRepair(src)
+    return isMechanic(src) or IsPlayerAceAllowed(src --[[@as string]], 'group.god') or IsPlayerAceAllowed(src --[[@as string]], 'admin')
+end
+
+---The vehicle the player is in, or a nearby one when a mechanic is working outside it.
+---@return number?, string?
+local function vehicleMatchingPlate(src, plate, allowNearby)
+    if type(plate) ~= 'string' then return end
+    plate = gns.string.trim(plate)
+    if plate == '' or #plate > 8 then return end
+    local ped = GetPlayerPed(src)
+    if ped == 0 then return end
+
+    local veh = GetVehiclePedIsIn(ped, false)
+    if veh ~= 0 and gns.getVehiclePlate(veh) == plate then
+        return veh, plate
+    end
+    if not allowNearby then return end
+
+    local coords = GetEntityCoords(ped)
+    local vehicles = GetAllVehicles()
+    for i = 1, #vehicles do
+        local candidate = vehicles[i]
+        if gns.getVehiclePlate(candidate) == plate and #(coords - GetEntityCoords(candidate)) <= 8.0 then
+            return candidate, plate
+        end
+    end
+end
+
+local function clampPart(part, level)
+    local maxLevel = partLimits[part]
+    level = tonumber(level)
+    if not maxLevel or not level or level ~= level then return end
+    if level < 0 then return 0 end
+    if level > maxLevel then return maxLevel end
+    return level
 end
 
 local function getVehicleStatus(plate)
@@ -73,14 +129,25 @@ end)
 -- Events
 
 RegisterNetEvent('qb-vehicletuning:server:SaveVehicleProps', function(vehicleProps)
-    if not isVehicleOwned(vehicleProps.plate) then return end
+    if type(vehicleProps) ~= 'table' then return end
+    local vehicle, plate = vehicleMatchingPlate(source, vehicleProps.plate, isMechanic(source))
+    if not vehicle or not plate or not isVehicleOwned(plate) then return end
+    local ped = GetPlayerPed(source)
+    if GetPedInVehicleSeat(vehicle, -1) ~= ped and not isMechanic(source) then return end
 
-    MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', {json.encode(vehicleProps), vehicleProps.plate})
+    vehicleProps.plate = plate
+    local encoded = json.encode(vehicleProps)
+    if not encoded or #encoded > 20000 then return end
+
+    MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', {encoded, plate})
 end)
 
 RegisterNetEvent('vehiclemod:server:setupVehicleStatus', function(plate, engineHealth, bodyHealth)
-    engineHealth = engineHealth or 1000.0
-    bodyHealth = bodyHealth or 1000.0
+    local _, cleanPlate = vehicleMatchingPlate(source, plate, false)
+    if not cleanPlate or vehicleStatus[cleanPlate] then return end
+    plate = cleanPlate
+    engineHealth = clampPart('engine', engineHealth) or 1000.0
+    bodyHealth = clampPart('body', bodyHealth) or 1000.0
 
     local statusInfo = vehicleStatus[plate] or getVehicleStatus(plate) or
         {
@@ -98,36 +165,61 @@ RegisterNetEvent('vehiclemod:server:setupVehicleStatus', function(plate, engineH
 end)
 
 RegisterNetEvent('qb-vehicletuning:server:UpdateDrivingDistance', function(amount, plate)
-    vehicleDrivingDistance[plate] = amount
-    TriggerClientEvent('qb-vehicletuning:client:UpdateDrivingDistance', -1, vehicleDrivingDistance[plate], plate)
-    local result = MySQL.query.await('SELECT plate FROM player_vehicles WHERE plate = ?', {plate})
-    if not result[1] then return end
+    local _, cleanPlate = vehicleMatchingPlate(source, plate, false)
+    amount = tonumber(amount)
+    if not cleanPlate or not amount or amount < 0 or amount > 10000000 then return end
 
-    MySQL.update.await('UPDATE player_vehicles SET drivingdistance = ? WHERE plate = ?', {amount, plate})
+    if vehicleDrivingDistance[cleanPlate] == nil then
+        vehicleDrivingDistance[cleanPlate] = tonumber(MySQL.scalar.await('SELECT drivingdistance FROM player_vehicles WHERE plate = ?', {cleanPlate})) or 0
+    end
+    local previous = vehicleDrivingDistance[cleanPlate]
+    if amount > previous + 2000 then
+        amount = previous + 2000
+    end
+    if amount < previous then return end
+    vehicleDrivingDistance[cleanPlate] = amount
+
+    local now = GetGameTimer()
+    local last = distanceWrite[cleanPlate]
+    if last and (now - last) < 15000 then return end
+    distanceWrite[cleanPlate] = now
+
+    TriggerClientEvent('qb-vehicletuning:client:UpdateDrivingDistance', -1, amount, cleanPlate)
+    MySQL.update.await('UPDATE player_vehicles SET drivingdistance = ? WHERE plate = ?', {amount, cleanPlate})
 end)
 
-RegisterNetEvent('qb-vehicletuning:server:LoadStatus', function(veh, plate) -- Used in old qb-garages
-    vehicleStatus[plate] = veh
-    TriggerClientEvent("vehiclemod:client:setVehicleStatus", -1, plate, veh)
+RegisterNetEvent('qb-vehicletuning:server:LoadStatus', function(_, plate)
+    local _, cleanPlate = vehicleMatchingPlate(source, plate, false)
+    if not cleanPlate or vehicleStatus[cleanPlate] then return end
+    local stored = getVehicleStatus(cleanPlate)
+    if not stored then return end
+    vehicleStatus[cleanPlate] = stored
+    TriggerClientEvent('vehiclemod:client:setVehicleStatus', -1, cleanPlate, stored)
 end)
+
+local function setPartLevel(src, plate, part, level)
+    level = clampPart(part, level)
+    local _, cleanPlate = vehicleMatchingPlate(src, plate, isMechanic(src))
+    if not level or not cleanPlate or not vehicleStatus[cleanPlate] then return end
+    local current = vehicleStatus[cleanPlate][part]
+    if type(current) == 'number' and level > current and not canRepair(src) then return end
+
+    vehicleStatus[cleanPlate][part] = level
+    TriggerClientEvent('vehiclemod:client:setVehicleStatus', -1, cleanPlate, vehicleStatus[cleanPlate])
+end
 
 RegisterNetEvent('vehiclemod:server:updatePart', function(plate, part, level)
-    if not vehicleStatus[plate] then return end
-
-    local maxLevel = (part == "engine" or part == "body") and 1000 or 100
-    vehicleStatus[plate][part] = level < 0 and 0 or level > maxLevel and maxLevel or level
-    TriggerClientEvent("vehiclemod:client:setVehicleStatus", -1, plate, vehicleStatus[plate])
+    setPartLevel(source, plate, part, level)
 end)
 
 RegisterNetEvent('qb-vehicletuning:server:SetPartLevel', function(plate, part, level)
-    if not vehicleStatus[plate] then return end
-
-    vehicleStatus[plate][part] = level
-    TriggerClientEvent("vehiclemod:client:setVehicleStatus", -1, plate, vehicleStatus[plate])
+    setPartLevel(source, plate, part, level)
 end)
 
 RegisterNetEvent('vehiclemod:server:fixEverything', function(plate)
-    if not vehicleStatus[plate] then return end
+    local _, cleanPlate = vehicleMatchingPlate(source, plate, true)
+    if not cleanPlate or not canRepair(source) or not vehicleStatus[cleanPlate] then return end
+    plate = cleanPlate
 
     for k, v in pairs(sharedConfig.maxStatusValues) do
         vehicleStatus[plate][k] = v
@@ -136,14 +228,15 @@ RegisterNetEvent('vehiclemod:server:fixEverything', function(plate)
     TriggerClientEvent("vehiclemod:client:setVehicleStatus", -1, plate, vehicleStatus[plate])
 end)
 
-RegisterNetEvent('vehiclemod:server:saveStatus', function(plate) -- Used in old qb-garages
-    if not vehicleStatus[plate] then return end
+RegisterNetEvent('vehiclemod:server:saveStatus', function(plate)
+    local _, cleanPlate = vehicleMatchingPlate(source, plate, canRepair(source))
+    if not cleanPlate or not vehicleStatus[cleanPlate] then return end
 
-    MySQL.update.await('UPDATE player_vehicles SET status = ? WHERE plate = ?', { json.encode(vehicleStatus[plate]), plate })
+    MySQL.update.await('UPDATE player_vehicles SET status = ? WHERE plate = ?', { json.encode(vehicleStatus[cleanPlate]), cleanPlate })
 end)
 
 RegisterNetEvent('qb-vehicletuning:server:SetAttachedVehicle', function(k, veh)
-    if not sharedConfig.plates[k] then return end
+    if not canRepair(source) or not sharedConfig.plates[k] then return end
 
     sharedConfig.plates[k].AttachedVehicle = veh
     TriggerClientEvent('qb-vehicletuning:client:SetAttachedVehicle', -1, veh, k)

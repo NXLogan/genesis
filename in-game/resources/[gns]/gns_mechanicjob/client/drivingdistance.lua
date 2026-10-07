@@ -100,7 +100,6 @@ local function trackDistance()
         --- TODO: figure out why this function is called twice
         if previousVehiclePos then
             trackDistanceFromPreviousPosition(pos, plate)
-            trackDistanceFromPreviousPosition(pos, plate)
         end
     elseif vehicleMeters == -1 and DrivingDistance[plate] then
         vehicleMeters = DrivingDistance[plate]

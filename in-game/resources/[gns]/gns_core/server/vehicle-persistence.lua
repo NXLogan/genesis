@@ -27,7 +27,12 @@ local function getVehicleId(vehicle)
 end
 
 RegisterNetEvent('gns_core:server:vehiclePropsChanged', function(netId, diff)
+    if type(netId) ~= 'number' or type(diff) ~= 'table' then return end
+    local src = source
+    local ped = GetPlayerPed(src)
     local vehicle = NetworkGetEntityFromNetworkId(netId)
+    if ped == 0 or not DoesEntityExist(vehicle) then return end
+    if #(GetEntityCoords(ped) - GetEntityCoords(vehicle)) > 12.0 then return end
 
     local vehicleId = getVehicleId(vehicle)
     if not vehicleId then return end
@@ -47,12 +52,22 @@ RegisterNetEvent('gns_core:server:vehiclePropsChanged', function(netId, diff)
         props.tankHealth = GetVehiclePetrolTankHealth(vehicle)
     end
 
+    local function clampFluid(value, previous)
+        if value == 'deleted' then return nil end
+        value = tonumber(value)
+        if not value or value ~= value or value < 0 or value > 100 then return previous end
+        if type(previous) == 'number' and value > previous + 0.5 then
+            return previous
+        end
+        return value
+    end
+
     if diff.fuelLevel then
-        props.fuelLevel = diff.fuelLevel ~= 'deleted' and diff.fuelLevel or nil
+        props.fuelLevel = clampFluid(diff.fuelLevel, props.fuelLevel)
     end
 
     if diff.oilLevel then
-        props.oilLevel = diff.oilLevel ~= 'deleted' and diff.oilLevel or nil
+        props.oilLevel = clampFluid(diff.oilLevel, props.oilLevel)
     end
 
     if diff.dirtLevel then

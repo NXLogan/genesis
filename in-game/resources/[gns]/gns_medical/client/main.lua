@@ -226,7 +226,6 @@ RegisterNetEvent('gns_medical:client:playerRevived', function()
     SetPlayerSprint(cache.playerId, true)
     resetAllInjuries()
     ResetPedMovementClipset(cache.ped, 0.0)
-    TriggerServerEvent('hud:server:RelieveStress', 100)
     exports.gns_core:Notify(locale('info.healthy'), 'inform')
     LocalPlayer.state.invBusy = false
 end)

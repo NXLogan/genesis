@@ -59,6 +59,7 @@ local function resetHungerAndThirst(player)
 
     player.Functions.SetMetaData('hunger', 100)
     player.Functions.SetMetaData('thirst', 100)
+    player.Functions.SetMetaData('stress', 0)
     TriggerClientEvent('hud:client:UpdateNeeds', player.PlayerData.source, 100, 100)
 end
 

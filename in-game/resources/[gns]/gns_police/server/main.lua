@@ -208,11 +208,29 @@ local function isTargetTooFar(src, targetSrc, maxDistance)
     maxDistance = maxDistance or 2.5
     local playerPed = GetPlayerPed(src)
     local targetPed = GetPlayerPed(targetSrc)
+    if playerPed == 0 or targetPed == 0 then return true end
     local playerCoords = GetEntityCoords(playerPed)
     local targetCoords = GetEntityCoords(targetPed)
     if #(playerCoords - targetCoords) > maxDistance then
         return true
     end
+end
+
+-- Set by CuffPlayer. The cuffed client may only change its cuff state inside this window.
+local cuffWindow = {}
+
+local function allowCuffChange(src)
+    local expires = cuffWindow[src]
+    if not expires or GetGameTimer() > expires then
+        cuffWindow[src] = nil
+        return false
+    end
+    return true
+end
+
+local function isIncapacitated(player)
+    local metadata = player and player.PlayerData.metadata
+    return metadata and (metadata.ishandcuffed or metadata.isdead or metadata.inlaststand)
 end
 
 lib.callback.register('police:server:CuffPlayer', function(src, cuffedSrc, isSoftcuff)
@@ -223,6 +241,7 @@ lib.callback.register('police:server:CuffPlayer', function(src, cuffedSrc, isSof
     local cuffedPlayer = exports.gns_core:GetPlayer(cuffedSrc)
     if not cuffedPlayer or not player.Functions.GetItemByName('handcuffs') then return end
 
+    cuffWindow[cuffedSrc] = GetGameTimer() + 20000
     TriggerClientEvent('police:client:GetCuffed', cuffedPlayer.PlayerData.source, player.PlayerData.source, isSoftcuff)
 
     return true
@@ -293,9 +312,11 @@ RegisterNetEvent('police:server:BillPlayer', function(targetSrc, price)
     if isTargetTooFar(src, targetSrc) then return end
 
     local player = exports.gns_core:GetPlayer(src)
-    if not player or player.PlayerData.job.type ~= 'leo' then return end
+    if not player or not IsLeoAndOnDuty(player) then return end
     local targetPlayer = exports.gns_core:GetPlayer(targetSrc)
     if not targetPlayer then return end
+    price = tonumber(price)
+    if not price or price ~= math.floor(price) or price < 1 or price > 100000 then return end
 
     if not targetPlayer.Functions.RemoveMoney('bank', price, 'paid-bills') then return end
     exports['Renewed-Banking']:addAccountMoney('police', price)
@@ -308,9 +329,11 @@ if not IsUsingXTPrison then
         if isTargetTooFar(src, targetSrc) then return end
 
         local player = exports.gns_core:GetPlayer(src)
-        if not player or player.PlayerData.job.type ~= 'leo' then return end
+        if not player or not IsLeoAndOnDuty(player) then return end
         local targetPlayer = exports.gns_core:GetPlayer(targetSrc)
         if not targetPlayer then return end
+        time = tonumber(time)
+        if not time or time ~= math.floor(time) or time < 1 or time > 999 then return end
 
         local currentDate = os.date('*t')
         if currentDate.day == 31 then
@@ -332,10 +355,19 @@ if not IsUsingXTPrison then
 end
 
 RegisterNetEvent('police:server:SetHandcuffStatus', function(isHandcuffed)
-    local player = exports.gns_core:GetPlayer(source)
+    if type(isHandcuffed) ~= 'boolean' then return end
+    local src = source
+    local player = exports.gns_core:GetPlayer(src)
     if not player then return end
+    if isHandcuffed == player.PlayerData.metadata.ishandcuffed then return end
+    -- A client can only cuff or uncuff itself during a cuff started by a nearby officer.
+    if not allowCuffChange(src) then return end
     player.Functions.SetMetaData('ishandcuffed', isHandcuffed)
-    Player(source).state.invBusy = isHandcuffed
+    Player(src).state.invBusy = isHandcuffed
+end)
+
+AddEventHandler('playerDropped', function()
+    cuffWindow[source] = nil
 end)
 
 RegisterNetEvent('heli:spotlight', function(state)
@@ -377,9 +409,9 @@ RegisterNetEvent('police:server:SeizeCash', function(targetSrc)
     if isTargetTooFar(src, targetSrc) then return end
 
     local player = exports.gns_core:GetPlayer(src)
-    if not player then return end
+    if not player or not IsLeoAndOnDuty(player) then return end
     local targetPlayer = exports.gns_core:GetPlayer(targetSrc)
-    if not targetPlayer then return end
+    if not targetPlayer or not isIncapacitated(targetPlayer) then return end
 
     local moneyAmount = targetPlayer.PlayerData.money.cash
     targetPlayer.Functions.RemoveMoney('cash', moneyAmount, 'police-cash-seized')
@@ -392,9 +424,9 @@ RegisterNetEvent('police:server:RobPlayer', function(targetSrc)
     if isTargetTooFar(src, targetSrc) then return end
 
     local player = exports.gns_core:GetPlayer(src)
-    if not player then return end
+    if not player or src == targetSrc then return end
     local targetPlayer = exports.gns_core:GetPlayer(targetSrc)
-    if not player or not targetPlayer then return end
+    if not targetPlayer or not isIncapacitated(targetPlayer) then return end
 
     local money = targetPlayer.PlayerData.money.cash
     if targetPlayer.Functions.RemoveMoney('cash', money, 'police-player-robbed') then

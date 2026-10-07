@@ -846,7 +846,7 @@ local function startWeaponStressThread(weapon)
                     TriggerServerEvent('hud:server:GainStress', math.random(1, 5))
                 end
             end
-            Wait(0)
+            Wait(200)
         end
     end)
 end
