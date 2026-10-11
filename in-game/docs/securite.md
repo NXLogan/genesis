@@ -44,13 +44,23 @@ if not exports.gns_core:GuardAllow(source, 'monAction', 5, 10000) then return en
 
 5 appels maximum par joueur sur 10 secondes pour la clé `monAction`. Le compteur de ce joueur est effacé à la déconnexion.
 
+**Mort.** Le state bag `gns_medical:deathState` n’est plus une source de vérité. Une écriture client (`replicated`) est ignorée et réécrite depuis la metadata. Le client ne peut qu’empirer son état (vivant → last stand → mort). Revenir à vivant passe par un revive serveur. Le respawn exige `metadata.isdead` et au moins 30 secondes depuis la mort, pour qu’un client ne se téléporte pas à l’hôpital en se déclarant mort.
+
+**Véhicules d’occasion.** La vente, le rachat et l’achat vérifient la zone, le propriétaire et un verrou par plaque. Le prix de rachat vient du modèle en base. Le spawn utilise le point du concessionnaire, pas les coordonnées du client.
+
+**Clés.** Verrouiller exige les clés, un véhicule de service, ou le premier état encore vide. Déverrouiller sans clés exige un crochet et d’être à côté. Le hotwire exige d’être au volant avec un crochet. Prendre les clés d’un PNJ exige qu’il soit mort, au volant, et pas un joueur.
+
+**Customs.** La zone est calculée sur le serveur à partir de la position du joueur. Le prix de réparation lit la carrosserie de l’entité. La sauvegarde des mods n’écrit que la plaque du véhicule conduit, dans une zone customs.
+
+**Alerte radar.** `GetQBPlayers` est une map indexée par source. L’alerte parcourt cette map et envoie à `PlayerData.source`.
+
 ## Ce qui n’est pas couvert
 
-La santé et l’armure du ped restent lues sur l’entité au moment de la sauvegarde. Sur GTA, le client a la main sur son ped : ce n’est pas une autorité serveur complète.
+La santé et l’armure du ped restent lues sur l’entité au moment de la sauvegarde. Sur GTA, le client a la main sur son ped : ce n’est pas une autorité serveur complète. Un joueur peut encore baisser sa vie pour entrer en last stand. Il ne peut plus annuler cet état ni respawn sans le délai serveur.
 
-Les jobs (`gns_police`, braquages, courses, etc.) ont leurs propres net events. Le renommage ne les audite pas un par un. Avant une ouverture publique, chaque event qui paie, donne un item ou téléporte doit vérifier la distance, le job et un rate limit. Le modèle à copier est celui du cœur : le client demande, le serveur décide.
+Les jobs (`gns_police`, braquages, courses, etc.) ont leurs propres net events. Banque, supérette, éboueur, hôpital, occasions et vente de rue sont bornés. Les autres events qui paient doivent encore vérifier la distance, le job et un rate limit avant une ouverture publique.
 
-Les ace de `permissions.cfg` donnent toutes les commandes à `group.admin`. À resserrer selon l’équipe.
+`group.admin` n’a plus `command allow`. ox_lib accorde chaque commande au groupe nommé dans `restricted`. Le staff quotidien va dans `group.mod`.
 
 ## Compatibilité et surface d’attaque
 

@@ -45,7 +45,7 @@ return {
             },
             WalletId = {
                 valueFunction = function()
-                    return 'QB-' .. math.random(11111111, 99999999)
+                    return 'GNS-' .. math.random(11111111, 99999999)
                 end,
             },
             SerialNumber = {

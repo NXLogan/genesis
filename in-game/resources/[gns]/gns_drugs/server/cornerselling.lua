@@ -24,6 +24,7 @@ local function getAvailableDrugs(source)
 end
 
 lib.callback.register('qb-drugs:server:getDrugOffer', function(source)
+    if not exports.gns_core:GuardAllow(source, 'drugOffer', 4, 10000) then return nil end
     local player = exports.gns_core:GetPlayer(source)
     if not player then return nil end
     local availableDrugs = getAvailableDrugs(player.PlayerData.source)
@@ -47,6 +48,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:giveStealItems', function()
     local src = source
+    if not exports.gns_core:GuardAllow(src, 'drugSteal', 3, 10000) then return end
     local stolen = stolenItems[src]
     stolenItems[src] = nil
     if not stolen or stolen.expiresAt < os.time() then return end
@@ -56,6 +58,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function()
     local src = source
+    if not exports.gns_core:GuardAllow(src, 'drugSell', 4, 10000) then return end
     if cornerLocks[src] then return end
     cornerLocks[src] = true
 
@@ -79,6 +82,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:robCornerDrugs', function()
     local src = source
+    if not exports.gns_core:GuardAllow(src, 'drugRob', 3, 10000) then return end
     if cornerLocks[src] then return end
     cornerLocks[src] = true
 

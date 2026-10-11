@@ -123,7 +123,8 @@ local function sellData(data, model)
     vehicleData.plate = model
     vehicleData.mods = lib.getVehicleProperties(vehicleData.ent)
     vehicleData.desc = data.desc
-    TriggerServerEvent('qb-occasions:server:sellVehicle', data.price, vehicleData)
+    local sold = lib.callback.await('gns_vehiclesales:server:sellVehicle', false, data.price, vehicleData)
+    if not sold then return end
     sellVehicleWait(data.price)
 end
 
@@ -216,7 +217,8 @@ AddEventHandler('qb-occasions:client:SellBackCar', function()
         local owned, balance = lib.callback.await('gns_vehiclesales:server:checkVehicleOwner', false, vehicleData.plate)
         if owned then
             if balance < 1 then
-                TriggerServerEvent('qb-occasions:server:sellVehicleBack', vehicleData)
+                local sold = lib.callback.await('gns_vehiclesales:server:sellVehicleBack', false)
+                if not sold then return end
                 DeleteVehicle(cache.vehicle)
             else
                 exports.gns_core:Notify(locale('error.finish_payments'), 'error', 3500)

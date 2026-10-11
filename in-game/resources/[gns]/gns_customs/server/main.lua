@@ -1,12 +1,61 @@
 local sharedConfig = require 'config.shared'
 
----@return number
-local function getModPrice(mod, level)
-    if mod == 'cosmetic' or mod == 'colors' or mod == 18 then
-        return sharedConfig.prices[mod] --[[@as number]]
-    else
-        return sharedConfig.prices[mod][level]
+---@param point vector3
+---@param vertices vector3[]
+---@return boolean
+local function isPointInPoly(point, vertices)
+    local inside = false
+    local j = #vertices
+    for i = 1, #vertices do
+        local vi, vj = vertices[i], vertices[j]
+        if ((vi.y > point.y) ~= (vj.y > point.y))
+            and (point.x < (vj.x - vi.x) * (point.y - vi.y) / ((vj.y - vi.y) ~= 0 and (vj.y - vi.y) or 1) + vi.x) then
+            inside = not inside
+        end
+        j = i
     end
+    return inside
+end
+
+---@param source number
+---@return number? index
+---@return table? zone
+local function zoneAtPlayer(source)
+    local ped = GetPlayerPed(source)
+    if ped == 0 then return end
+    local coords = GetEntityCoords(ped)
+    for i = 1, #sharedConfig.zones do
+        local zone = sharedConfig.zones[i]
+        local origin = zone.points and zone.points[1]
+        if origin and math.abs(coords.z - origin.z) <= 8.0 and isPointInPoly(coords, zone.points) then
+            return i, zone
+        end
+    end
+end
+
+---@param source number
+---@param jobs string[]?
+---@return boolean
+local function playerHasJob(source, jobs)
+    if not jobs then return false end
+    local jobName = exports.gns_core:GetPlayer(source)?.PlayerData?.job?.name
+    if not jobName then return false end
+    for i = 1, #jobs do
+        if jobName == jobs[i] then
+            return true
+        end
+    end
+    return false
+end
+
+---@return number?
+local function getModPrice(mod, level)
+    local entry = sharedConfig.prices[mod]
+    if type(entry) == 'number' then return entry end
+    if type(entry) ~= 'table' then return end
+    level = tonumber(level)
+    if not level then return end
+    return entry[level]
 end
 
 ---@param source number
@@ -14,6 +63,9 @@ end
 ---@return boolean
 local function removeMoney(source, amount)
     local player = exports.gns_core:GetPlayer(source)
+    if not player then return false end
+    if amount <= 0 then return true end
+
     local cashBalance = player.Functions.GetMoney('cash')
     local bankBalance = player.Functions.GetMoney('bank')
 
@@ -29,57 +81,65 @@ local function removeMoney(source, amount)
     return false
 end
 
+---@param source number
+---@return number? vehicle
+local function drivenVehicle(source)
+    local ped = GetPlayerPed(source)
+    if ped == 0 then return end
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= ped then return end
+    return vehicle
+end
+
 -- Won't charge money for mods if the player's job is in the list
 lib.callback.register('gns_customs:server:pay', function(source, mod, level)
-    local zone = lib.callback.await('gns_customs:client:zone', source)
+    if not exports.gns_core:GuardAllow(source, 'customsPay', 12, 10000) then return false end
+    local _, zone = zoneAtPlayer(source)
+    if not zone or not drivenVehicle(source) then return false end
 
-    for i, v in ipairs(sharedConfig.zones) do
-        if i == zone and v.freeMods then
-            local playerJob = exports.gns_core:GetPlayer(source)?.PlayerData?.job?.name
-            for _, job in ipairs(v.freeMods) do
-                if playerJob == job then
-                    return true
-                end
-            end
-        end
+    if playerHasJob(source, zone.freeMods) then
+        return true
     end
 
-    return removeMoney(source, getModPrice(mod, level))
+    local price = getModPrice(mod, level)
+    if type(price) ~= 'number' or price < 0 or price ~= price or price > 1000000 then return false end
+    return removeMoney(source, price)
 end)
 
 -- Won't charge money for repairs if the player's job is in the list
-lib.callback.register('gns_customs:server:repair', function(source, bodyHealth)
-    local zone = lib.callback.await('gns_customs:client:zone', source)
+lib.callback.register('gns_customs:server:repair', function(source)
+    if not exports.gns_core:GuardAllow(source, 'customsRepair', 4, 10000) then return false end
+    local _, zone = zoneAtPlayer(source)
+    local vehicle = drivenVehicle(source)
+    if not zone or not vehicle then return false end
 
-    for i, v in ipairs(sharedConfig.zones) do
-        if i == zone and v.freeRepair then
-            local playerJob = exports.gns_core:GetPlayer(source)?.PlayerData?.job?.name
-            for _, job in ipairs(v.freeRepair) do
-                if playerJob == job then
-                    return true
-                end
-            end
-        end
+    if playerHasJob(source, zone.freeRepair) then
+        return true
     end
 
+    local bodyHealth = GetVehicleBodyHealth(vehicle)
+    if type(bodyHealth) ~= 'number' or bodyHealth ~= bodyHealth then return false end
+    bodyHealth = math.max(0, math.min(1000, bodyHealth))
     local price = math.ceil(1000 - bodyHealth)
     return removeMoney(source, price)
 end)
 
 local function IsVehicleOwned(plate)
-    local result = MySQL.scalar.await('SELECT 1 from player_vehicles WHERE plate = ?', {plate})
-    if result then
-        return true
-    else
-        return false
-    end
+    return MySQL.scalar.await('SELECT 1 FROM player_vehicles WHERE plate = ?', { plate }) ~= nil
 end
 
---Copied from qb-mechanicjob
 RegisterNetEvent('gns_customs:server:saveVehicleProps', function()
     local src = source --[[@as number]]
+    if not exports.gns_core:GuardAllow(src, 'customsSave', 4, 10000) then return end
+    if not zoneAtPlayer(src) then return end
+    local vehicle = drivenVehicle(src)
+    if not vehicle then return end
+
+    local plate = GetVehicleNumberPlateText(vehicle)
+    if type(plate) ~= 'string' or plate == '' or not IsVehicleOwned(plate) then return end
+
     local vehicleProps = lib.callback.await('gns_customs:client:vehicleProps', src)
-    if IsVehicleOwned(vehicleProps.plate) then
-        MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', {json.encode(vehicleProps), vehicleProps.plate})
-    end
+    if type(vehicleProps) ~= 'table' then return end
+    vehicleProps.plate = plate
+    MySQL.update.await('UPDATE player_vehicles SET mods = ? WHERE plate = ?', { json.encode(vehicleProps), plate })
 end)

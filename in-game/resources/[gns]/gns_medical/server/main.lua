@@ -13,35 +13,75 @@ local logger = require '@gns_core.modules.logger'
 
 local triggerEventHooks = require '@gns_core.modules.hooks'
 local respawning = {}
+local deadSince = {}
 
 local function getDeathState(src)
 	local player = exports.gns_core:GetPlayer(src)
+	if not player then return sharedConfig.deathState.ALIVE end
 	return player.PlayerData.metadata.isdead and sharedConfig.deathState.DEAD
 		or player.PlayerData.metadata.inlaststand and sharedConfig.deathState.LAST_STAND
 		or sharedConfig.deathState.ALIVE
 end
 
+---Metadata is the source of truth. The state bag is only a mirror the server writes.
+---@param src Source
+---@param state integer
+---@return boolean
+local function applyDeathState(src, state)
+	local player = exports.gns_core:GetPlayer(src)
+	if not player then return false end
+	if state ~= sharedConfig.deathState.ALIVE
+		and state ~= sharedConfig.deathState.LAST_STAND
+		and state ~= sharedConfig.deathState.DEAD then
+		return false
+	end
+
+	player.Functions.SetMetaData('isdead', state == sharedConfig.deathState.DEAD)
+	player.Functions.SetMetaData('inlaststand', state == sharedConfig.deathState.LAST_STAND)
+	local playerState = Player(src).state
+	playerState:set(DEATH_STATE_STATE_BAG, state, true)
+	playerState:set('isDead', state == sharedConfig.deathState.DEAD or state == sharedConfig.deathState.LAST_STAND, true)
+	if state == sharedConfig.deathState.ALIVE then
+		respawning[src] = nil
+		deadSince[src] = nil
+	elseif state == sharedConfig.deathState.DEAD then
+		deadSince[src] = deadSince[src] or os.time()
+	end
+	return true
+end
+
 RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
-	local playerState = Player(source).state
-	playerState:set(DEATH_STATE_STATE_BAG, getDeathState(source), true)
+	local src = source
+	local state = getDeathState(src)
+	if state == sharedConfig.deathState.DEAD then
+		deadSince[src] = os.time() - 30
+	end
+	applyDeathState(src, state)
+	local playerState = Player(src).state
 	playerState:set(BLEED_LEVEL_STATE_BAG, 0, true)
 	for bodyPartKey in pairs(sharedConfig.bodyParts) do
 		playerState:set(BODY_PART_STATE_BAG_PREFIX .. bodyPartKey, nil, true)
 	end
 end)
 
-AddStateBagChangeHandler(DEATH_STATE_STATE_BAG, nil, function(bagName, _, value)
-    local playerId = GetPlayerFromStateBagName(bagName)
-    local player = exports.gns_core:GetPlayer(playerId)
+AddStateBagChangeHandler(DEATH_STATE_STATE_BAG, nil, function(bagName, _, value, _, replicated)
+	if not replicated then return end
+	local playerId = GetPlayerFromStateBagName(bagName)
+	if not playerId or playerId == 0 then return end
+	local authoritative = getDeathState(playerId)
+	if value ~= authoritative then
+		Player(playerId).state:set(DEATH_STATE_STATE_BAG, authoritative, true)
+	end
+end)
 
-    if player then
-        player.Functions.SetMetaData('isdead', value == sharedConfig.deathState.DEAD)
-        player.Functions.SetMetaData('inlaststand', value == sharedConfig.deathState.LAST_STAND)
-        Player(playerId).state:set("isDead", value == sharedConfig.deathState.DEAD or value == sharedConfig.deathState.LAST_STAND, true)
-        if value == sharedConfig.deathState.ALIVE then
-            respawning[playerId] = nil
-        end
-    end
+lib.callback.register('gns_medical:server:setDeathState', function(source, state)
+	if not exports.gns_core:GuardAllow(source, 'setDeathState', 4, 10000) then return false end
+	state = tonumber(state)
+	local current = getDeathState(source)
+	local canWorsen = (current == sharedConfig.deathState.ALIVE and (state == sharedConfig.deathState.LAST_STAND or state == sharedConfig.deathState.DEAD))
+		or (current == sharedConfig.deathState.LAST_STAND and state == sharedConfig.deathState.DEAD)
+	if not canWorsen then return false end
+	return applyDeathState(source, state)
 end)
 
 ---@param player table|number
@@ -69,6 +109,7 @@ exports('ResetHungerAndThirst', resetHungerAndThirst)
 local function revivePlayer(player)
     resetHungerAndThirst(player)
     local target = type(player) == 'table' and player.PlayerData.source or player
+    applyDeathState(target, sharedConfig.deathState.ALIVE)
     TriggerClientEvent('gns_medical:client:playerRevived', target)
 end
 
@@ -224,7 +265,9 @@ lib.addCommand('aheal', {
 end)
 
 lib.callback.register('gns_medical:server:respawn', function(source)
-	if Player(source).state[DEATH_STATE_STATE_BAG] ~= sharedConfig.deathState.DEAD or respawning[source] then return false end
+	local player = exports.gns_core:GetPlayer(source)
+	local since = deadSince[source]
+	if not player or not player.PlayerData.metadata.isdead or not since or (os.time() - since) < 30 or respawning[source] then return false end
 	local respawnToken = GetGameTimer()
 	respawning[source] = respawnToken
 	if not triggerEventHooks('respawn', {source = source}) then
@@ -244,4 +287,5 @@ end)
 
 AddEventHandler('playerDropped', function()
 	respawning[source] = nil
+	deadSince[source] = nil
 end)

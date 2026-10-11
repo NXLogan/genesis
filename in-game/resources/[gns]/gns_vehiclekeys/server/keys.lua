@@ -146,7 +146,10 @@ exports('IsPlayerNearVehicle', IsPlayerNearVehicle)
 lib.callback.register('gns_vehiclekeys:server:giveKeys', function(source, netId)
     local vehicle = NetworkGetEntityFromNetworkId(netId)
     if not IsPlayerNearVehicle(source, vehicle) then return end
+    local owner = Entity(vehicle).state.owner
+    if not owner or getCitizenId(source) ~= owner then return end
     GiveKeys(source, vehicle)
+    return true
 end)
 
 AddStateBagChangeHandler('vehicleid', '', function(bagName, _, vehicleId)

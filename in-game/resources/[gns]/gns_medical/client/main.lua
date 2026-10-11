@@ -40,7 +40,13 @@ AddStateBagChangeHandler(DEATH_STATE_STATE_BAG, ('player:%s'):format(cache.serve
 end)
 
 function SetDeathState(deathState)
-    playerState:set(DEATH_STATE_STATE_BAG, deathState, true)
+    if deathState == sharedConfig.deathState.ALIVE then
+        DeathState = deathState
+        return
+    end
+
+    local accepted = lib.callback.await('gns_medical:server:setDeathState', false, deathState)
+    if not accepted then return end
     DeathState = deathState
 end
 
@@ -211,13 +217,11 @@ end)
 
 ---Revives player, healing all injuries
 RegisterNetEvent('gns_medical:client:playerRevived', function()
-    if DeathState ~= sharedConfig.deathState.ALIVE then
-        local pos = GetEntityCoords(cache.ped, true)
-        NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
-        SetDeathState(sharedConfig.deathState.ALIVE)
-        SetEntityInvincible(cache.ped, false)
-        EndLastStand()
-    end
+    local pos = GetEntityCoords(cache.ped, true)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
+    DeathState = sharedConfig.deathState.ALIVE
+    SetEntityInvincible(cache.ped, false)
+    EndLastStand()
 
     TriggerEvent('police:client:DeEscort')
     SetEntityMaxHealth(cache.ped, 200)

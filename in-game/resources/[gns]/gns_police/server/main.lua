@@ -377,18 +377,29 @@ end)
 RegisterNetEvent('police:server:FlaggedPlateTriggered', function(radar, plate, street)
     local src = tonumber(source)
     if not src then return end
+    if not exports.gns_core:GuardAllow(src, 'flaggedPlate', 4, 10000) then return end
+
+    local function shortText(value, max)
+        if type(value) ~= 'string' then return '' end
+        return value:gsub('[%c]', ''):sub(1, max)
+    end
+
+    radar = shortText(radar, 32)
+    plate = shortText(plate, 12)
+    street = shortText(street, 64)
+
     local coords = GetEntityCoords(GetPlayerPed(src))
     local players = exports.gns_core:GetQBPlayers()
-    for i = 1, #players do
-        if IsLeoAndOnDuty(players[i]) then
+    for _, player in pairs(players) do
+        if IsLeoAndOnDuty(player) then
+            local target = player.PlayerData.source
             local alertData = {
                 title = locale('info.new_call'),
                 coords = coords,
-                description = locale(
-                    'info.plate_triggered', plate, street, radar)
+                description = locale('info.plate_triggered', plate, street, radar)
             }
-            TriggerClientEvent('qb-phone:client:addPoliceAlert', i, alertData)
-            TriggerClientEvent('police:client:policeAlert', i, coords, locale('info.plate_triggered_blip', radar))
+            TriggerClientEvent('qb-phone:client:addPoliceAlert', target, alertData)
+            TriggerClientEvent('police:client:policeAlert', target, coords, locale('info.plate_triggered_blip', radar))
         end
     end
 end)
